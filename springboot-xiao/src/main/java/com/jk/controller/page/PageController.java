@@ -26,6 +26,10 @@ public class PageController {
 	@Reference(version = "1.0.0")  //
 	private UserService userService;
 
+	@RequestMapping("toList")
+    public String toList(){
+	   return "list";
+    }
 	//翻译
 	@RequestMapping("toTranslation")
 	public String toTranslation() {
