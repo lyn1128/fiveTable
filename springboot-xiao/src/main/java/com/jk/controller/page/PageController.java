@@ -27,8 +27,8 @@ public class PageController {
 	private UserService userService;
 
 	@RequestMapping("toList")
-    public String toList(){
-	   return "list";
+        public String toList(){
+	   return "list1";
     }
 	//翻译
 	@RequestMapping("toTranslation")
