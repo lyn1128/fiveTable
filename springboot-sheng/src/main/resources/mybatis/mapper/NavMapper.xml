@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jk.dao.nav.NavMapper">
+	<select id="queryNavAll" resultType="com.jk.model.nav.NavBean">
+		select id,text,url,pid from t_nav
+	</select>
+<!-- 根据用户登陆的id  查询左侧树 -->
+	<select id="getNavList" parameterType="map" resultType="com.jk.model.nav.NavBean">
+		select 
+			DISTINCT n.id,n.text,n.url,n.pid
+			from t_nav n
+			LEFT JOIN t_role_power rp on n.id=rp.power_id
+			LEFT JOIN t_user_role ur on ur.role_id=rp.role_id
+			where ur.user_id=#{id,jdbcType=NUMERIC}
+	</select>
+	<select id="queryRolePowerByRoleId" resultType="com.jk.model.user.RolePowerBean">
+	    select id,role_id as roleId,power_id as powerId from t_role_power 
+	    where role_id = #{roleId,jdbcType=VARCHAR}
+	</select>
+<!-- 	//根据用户id查询出用户所拥有的权限地址列表-->	
+    <select id="findUserPowerUrl" resultType="com.jk.model.nav.NavBean">
+	    select 
+			DISTINCT n.url
+			from t_nav n
+			LEFT JOIN t_role_power rp on n.id=rp.power_id
+			LEFT JOIN t_user_role ur on ur.	role_id=rp.role_id
+			where ur.user_id=#{value} and n.url is not null and n.url != ''
+			UNION ALL
+			select 
+			DISTINCT
+			pm.path
+			from t_power_menu pm 
+			LEFT JOIN t_nav n on pm.power_id=n.id
+			LEFT JOIN t_role_power rp on n.id=rp.power_id
+			LEFT JOIN t_user_role ur on ur.role_id=rp.role_id
+			where ur.user_id=#{value} and pm.path is not null and pm.path != ''
+	    
+	</select>
+</mapper>

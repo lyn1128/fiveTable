@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <title>Insert title here</title>
+    <link rel="stylesheet" href="../js/easyui/themes/icon.css"/>
+    <link rel="stylesheet" href="../js/easyui/themes/default/easyui.css"/>
+    <link rel="stylesheet" href="../js/easyui/themes/color.css"/>
+    <script src="../js/easyui/jquery.min.js"></script>
+    <script src="../js/easyui/jquery.easyui.min.js"></script>
+    <script src="../js/easyui/locale/easyui-lang-zh_CN.js"></script>
+    <script src="../js/easyui/util-js.js"></script>
+</head>
+<body class="easyui-layout">
+<div data-options="region:'north',title:'North Title',split:true" style="height:130px;">
+    <div>
+
+        <span  id="weather"></span>
+
+        <div style="margin-left: 78%">
+            <table cellspacing="0">
+                <!--<tr>
+                    <th><font size="2">用户名称：</font></th>
+                    <td><font size="2"><%= ((UserBean)session.getAttribute("user")).getName() %></font></td>
+                </tr>
+                <tr>
+                    <th><font size="2">用户身份：</font></th>
+                    <td><font size="2"><%= ((UserBean)session.getAttribute("user")).getRoleName() %></font></td>
+                </tr>
+                <tr>
+                    <th><font size="2">IP：</font></th>
+                    <td><font size="2">[<%= ((UserBean)session.getAttribute("user")).getLoginIp() %>]</font></td>
+                </tr>-->
+                <tr>
+                    <th colspan="2">
+                        <font size="2">
+                            <a href="javascript:loginOut()">注销用户</a>
+                        </font>
+                    </th>
+
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<div data-options="region:'west',title:'West',split:true" style="width:250px;">
+    <ul class="easyui-tree" id="myTree"></ul>
+</div>
+<div data-options="region:'center',title:'center title'">
+    <div id="myTabs" class="easyui-tabs" data-options="fit:true">
+        <div title="欢迎" style="padding:20px;display:none;">
+            <h1>欢迎使用</h1>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    $(function(){
+        queryWeather();//加载天气
+        $("#myTree").tree({
+            //url:'../data/tree.json',
+            url:'../nav/getNavListCommon',
+            lines:true,
+            parentField:'pid',
+            onClick:function(node){
+                if(undefined == node.children || node.children.length <= 0){
+                    var flag = $('#myTabs').tabs('exists',node.text);
+                    if(flag){
+                        $('#myTabs').tabs('select',node.text)
+                    }else{
+                        $('#myTabs').tabs('add',{
+                            title:node.text,
+                            content:createIframe(node.url),
+                            closable:true,
+                            tools:[
+                                {
+                                    iconCls:'icon-mini-refresh',
+                                    handler:function(){
+                                        var selectTab = $('#myTabs').tabs('getSelected');
+                                        $('#myTabs').tabs('update',{
+                                            tab:selectTab,
+                                            options:{
+                                                content:createIframe(node.url)
+                                            }
+                                        });
+                                    }
+                                }
+                            ]
+                        })
+                    }
+                }
+            }
+        })
+
+    })
+    function createIframe(url){
+        return '<iframe scrolling="auto" frameborder="0"  src="'+'..'+ url + '" style="width:100%;height:100%;"></iframe>';
+    }
+    function loginOut(){
+        $.ajax({
+            url:"../user/loginOut.do",
+            type:"post",
+            success:function(data){
+                if (data) {
+                    location.href="../page/login";
+                }
+            },
+            error:function(){}
+        })
+    }
+
+
+    function queryWeather(){
+        $.ajax({
+            url:"../weather/queryWeather.do",
+            success:function(data){
+                var msg="";
+                msg+="<font size=2>"+data.parent+""+data.city+"-今天是"+data.ymd.substring(0,4)+"年"+data.ymd.substring(5,7)+"月"+data.ymd.substring(8,10)+"日，"
+                    +data.week+",天气"+data.type+",最高气温"+data.high+",最低气温"+data.low+
+                    ",风向"+data.fx+",风力"+data.fl+",日出时间"+data.sunrise+",日落时间"+data.sunset+",注意："+data.notice+"</font>";
+                $("#weather").html(msg)
+            },
+            error:function(){}
+        })
+    }
+
+
+</script>
+
+</html>

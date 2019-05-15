@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jk.dao.user.UserMapper">
+
+	<select id="userCount" resultType="int">
+		select count(1) from t_nav
+
+	</select>
+<!-- 查询部门树 (新增页面) -->
+	<select id="queryDeptpid" resultType="com.jk.model.dept.DeptBean">
+	   select id,name as text,pid from t_dept where pid=#{value}
+	</select>
+<!-- 二级联动 -->
+	<select id="queryArea" resultType="com.jk.model.area.AreaBean">
+	   select * from t_area where pid=#{value}
+	</select>
+<!-- 查询角色（新增页面） -->
+	<select id="queryRole" resultType="com.jk.model.user.RoleBean">
+	   select * from t_role
+	</select>
+<!-- 查询角色表count（权限页面）-->
+	<select id="queryRole2Count" resultType="int">
+	   select count(*) from t_role
+	   <include refid="roleCondition"></include>
+	</select>
+<!-- 分页查询角色表（权限页面） -->
+    <select id="queryRole2" resultType="com.jk.model.user.RoleBean">
+       select * from t_role 
+       <include refid="roleCondition"></include>
+
+    </select>
+<!-- 新增用户表 -->
+	<insert id="addUser">
+	   insert into t_user(name,login_number,password,sex,birthday,
+	   dept_id,detail,email,hand_img,province,city,status)
+	   values(#{name},#{loginNumber},#{password},#{sex},#{birthday},
+	   #{deptId},#{detail},#{email},#{handImg},#{province},#{city},0)
+	   <selectKey resultType="int" keyProperty="id">
+             SELECT LAST_INSERT_ID() AS ID
+       </selectKey>
+	</insert>
+<!-- 新增用户角色表 -->
+	<insert id="addUserRole" parameterType="list">
+	    insert into t_user_role(id,user_id,role_id) values
+	    <foreach collection="list" item="item" index="index" separator="," >
+	        (#{item.id},#{item.userId},#{item.roleId})
+	    </foreach>
+	</insert>
+<!-- 查询数据条数user表 	 -->
+	<select id="queryUserCount" resultType="int">
+	  SELECT 
+		COUNT(DISTINCT u.id)
+		from t_user u
+		LEFT JOIN t_dept d on u.dept_id=d.id
+		
+		LEFT JOIN t_area a1 on u.province=a1.id
+		LEFT JOIN t_area a2 on u.city=a2.id
+		
+		LEFT JOIN t_user_role ur on u.id=ur.user_id
+		LEFT JOIN t_role r on ur.role_id=r.id
+	</select>
+<!-- 查询数据 user表 -->
+	<select id="queryUser" resultType="com.jk.model.user.UserBean">
+	   select 
+		u.id,
+		u.name,
+		u.login_number as loginNumber,
+		u.password,
+		u.sex,
+		u.birthday,
+		u.status,
+		u.detail,
+		u.email,
+		u.hand_img as handImg,
+		d.name as deptName,
+		a1.name as provinceName,
+		a2.name as cityName,
+		group_concat(r.name) as roleName
+		from t_user u
+		LEFT JOIN t_dept d on u.dept_id=d.id 
+		LEFT JOIN t_area a1 on u.province=a1.id 
+		LEFT JOIN t_area a2 on u.city=a2.id 
+		LEFT JOIN t_user_role ur on u.id=ur.user_id
+		LEFT JOIN t_role r on ur.role_id=r.id
+		group by u.id
+		limit #{startIndex,jdbcType=NUMERIC},#{rows,jdbcType=NUMERIC}
+	</select>
+<!-- 查询一条  回显 -->
+	<select id="queryUserOne" resultType="com.jk.model.user.UserBean">
+	  select 
+		u.id,
+		u.name,
+		u.login_number as loginNumber,
+		u.password,
+		u.sex,
+		u.birthday,
+		u.status,
+		u.detail,
+		u.email,
+		u.hand_img as handImg,
+		d.id as deptId,
+		a1.id as province,
+		a2.id as city,
+		group_concat(r.id) as roleId
+		from t_user u
+		LEFT JOIN t_dept d on u.dept_id=d.id 
+		LEFT JOIN t_area a1 on u.province=a1.id 
+		LEFT JOIN t_area a2 on u.city=a2.id 
+		LEFT JOIN t_user_role ur on u.id=ur.user_id
+		LEFT JOIN t_role r on ur.role_id=r.id
+where u.id=#{value}
+	</select>
+<!-- 修改user表 -->
+	<update id="updateUser">
+	   update t_user set name=#{name},login_number=#{loginNumber},sex=#{sex},
+	   birthday=#{birthday},detail=#{detail},email=#{email},hand_img=#{handImg},
+	   dept_id=#{deptId},province=#{province},city=#{city} where id=#{id}
+	</update>
+<!-- 删除用户角色表（删除用户原有的角色） -->
+	<delete id="deleteUserRoleByUserId">
+	   delete from t_user_role where user_id=#{value}
+	</delete>
+<!-- 登陆（查询用户） -->
+	<select id="getUserInfoByLoginNumber" resultType="com.jk.model.user.UserBean">
+	   select 
+		u.id,
+		u.name,
+		u.login_number as loginNumber,
+		u.password,
+		u.sex,
+		u.birthday,
+		u.status,
+		u.detail,
+		u.email,
+		u.hand_img as handImg,
+		d.name as deptName,
+		a1.name as provinceName,
+		a2.name as cityName,
+		group_concat(r.name) as roleName
+		from t_user u
+		LEFT JOIN t_dept d on u.dept_id=d.id 
+		LEFT JOIN t_area a1 on u.province=a1.id 
+		LEFT JOIN t_area a2 on u.city=a2.id 
+		LEFT JOIN t_user_role ur on u.id=ur.user_id
+		LEFT JOIN t_role r on ur.role_id=r.id
+where u.login_number=#{loginNumber}
+	</select>
+<!-- 保存权限  //新增角色权限表 t_role_power -->
+	<insert id="saveRolePower">
+	   insert into t_role_power(role_id,power_id) values
+	   <foreach collection="list" item="item" index="index" separator="," >
+	        (#{item.roleId},#{item.powerId})
+	    </foreach>
+	</insert>
+<!-- //先删掉原来的 (删除旧权限) -->
+	<delete id="deleteRolePower">
+	    delete from t_role_power where role_id=#{value}
+	</delete>
+<!-- //查询详细权限  权限页面第三个格 -->
+	<select id="queryPowerMenuList" resultType="com.jk.model.user.PowerMenuBean">
+	    select * from t_power_menu where power_id=#{value}
+	</select>
+<!-- 保存权限菜单 -->
+	<insert id="savePowerMenu">
+	    insert into t_power_menu(name,path,power_id,remark) values(#{name},#{path},#{powerId},#{remark})
+	</insert>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+<!-- 角色表条查（权限页面） -->
+	<sql id="roleCondition">
+	   <where>
+	       <if test="role.name!=null and role.name!=''">
+	           and name like concat(concat('%',#{role.name}),'%')
+	       </if>
+	   </where>
+	</sql>
+	
+</mapper>
